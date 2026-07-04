@@ -34,7 +34,6 @@ class MainHook : XposedModule() {
             .intercept { chain ->
                 chain.proceed().also {
                     val view = chain.thisObject as View
-                    // 将 dp 转换为 px，保证不同分辨率设备表现一致
                     val offset = HORIZONTAL_OFFSET_DP
                     headerButtonPadding.setInt(view, offset)
                     // 仅修改左右 padding，保留原有的上下 padding
