@@ -71,6 +71,32 @@ headerHeight    最近任务卡片 header 高度
 
 ## Hook 逻辑
 
+### 整体布局上移
+
+Hook 方法：
+
+```text
+com.miui.home.recents.layoutconfig.TaskStackLayoutConfig#getTaskViewCenterYInWindowFraction()
+```
+
+系统在这里返回堆叠样式卡片中心点位于窗口高度中的比例。
+
+模块直接接管返回值：
+
+```kotlin
+TASK_STACK_CENTER_Y_IN_WINDOW_FRACTION
+```
+
+默认中心比例：
+
+```kotlin
+private const val TASK_STACK_CENTER_Y_IN_WINDOW_FRACTION = 0.425f
+```
+
+原始普通竖屏堆叠样式约为 `0.455f`，这里改成 `0.425f`，相当于整体上移约 `3%` 屏幕高度。想更靠上就继续调小，想弱一点就调大。
+
+### 小卡片视觉居中补偿
+
 Hook 方法：
 
 ```text
@@ -117,7 +143,7 @@ rect.offset(
 默认补偿倍率：
 
 ```kotlin
-private const val STACK_CARD_Y_COMPENSATION_MULTIPLIER = 1f
+private const val STACK_CARD_Y_COMPENSATION_MULTIPLIER = 1.5f
 ```
 
 ## 影响范围

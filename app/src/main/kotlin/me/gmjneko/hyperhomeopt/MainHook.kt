@@ -18,6 +18,9 @@ class MainHook : XposedModule() {
         runCatching { stackTaskViewVisualCenterOffset(param.classLoader) }
             .onFailure { log(Log.ERROR, TAG, "Failed to hook TaskStackViewsAlgorithmStack", it) }
 
+        runCatching { stackTaskViewLayoutOffset(param.classLoader) }
+            .onFailure { log(Log.ERROR, TAG, "Failed to hook stack task view layout config", it) }
+
     }
 
     private fun taskViewHeaderOffset(classLoader: ClassLoader) {
@@ -89,10 +92,22 @@ class MainHook : XposedModule() {
             }
     }
 
+    private fun stackTaskViewLayoutOffset(classLoader: ClassLoader) {
+        val stackLayoutConfig = classLoader.loadClass(
+            "com.miui.home.recents.layoutconfig.TaskStackLayoutConfig"
+        )
+        val getCenterY = stackLayoutConfig.getDeclaredMethod("getTaskViewCenterYInWindowFraction")
+
+        hook(getCenterY)
+            .setId("stack_task_view_center_y")
+            .intercept { TASK_STACK_CENTER_Y_IN_WINDOW_FRACTION }
+    }
+
     private companion object {
         private const val TAG = "miui-home"
         private const val MIUI_HOME_PACKAGE = "com.miui.home"
         private const val HORIZONTAL_OFFSET_DP = 45
-        private const val STACK_CARD_Y_COMPENSATION_MULTIPLIER = 1.5f
+        private const val STACK_CARD_Y_COMPENSATION_MULTIPLIER = 1.6f
+        private const val TASK_STACK_CENTER_Y_IN_WINDOW_FRACTION = 0.49f
     }
 }
