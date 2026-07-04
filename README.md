@@ -129,3 +129,8 @@ TaskStackViewsAlgorithmStack
 ```
 
 因此只影响后台“堆叠”样式。
+
+---
+
+# 感谢
+本工程基于 `YuKongA` 的模块模板进行修改，对此表示感谢。
