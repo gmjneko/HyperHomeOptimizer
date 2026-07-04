@@ -93,6 +93,6 @@ class MainHook : XposedModule() {
         private const val TAG = "miui-home"
         private const val MIUI_HOME_PACKAGE = "com.miui.home"
         private const val HORIZONTAL_OFFSET_DP = 45
-        private const val STACK_CARD_Y_COMPENSATION_MULTIPLIER = 1.4f
+        private const val STACK_CARD_Y_COMPENSATION_MULTIPLIER = 1.5f
     }
 }
