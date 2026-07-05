@@ -45,6 +45,8 @@ class MainHook : XposedModule() {
             }
     }
 
+    @Volatile private var cachedHeaderHeight = -1f
+
     private fun stackTaskViewVisualCenterOffset(classLoader: ClassLoader) {
         val stackAlgorithm = classLoader.loadClass(
             "com.miui.home.recents.views.TaskStackViewsAlgorithmStack"
@@ -86,8 +88,16 @@ class MainHook : XposedModule() {
                     }
 
                     val rect = rectField.get(transform) as RectF
-                    val headerHeight = (getHeaderHeight.invoke(chain.thisObject) as Number).toFloat()
-                    rect.offset(0f, (referenceScale - scale) * headerHeight * STACK_CARD_Y_COMPENSATION_MULTIPLIER / 2f)
+                    val headerHeight = if (cachedHeaderHeight > 0f) {
+                        cachedHeaderHeight
+                    } else {
+                        (getHeaderHeight.invoke(chain.thisObject) as Number).toFloat()
+                            .also { cachedHeaderHeight = it }
+                    }
+                    rect.offset(
+                        0f,
+                        (referenceScale - scale) * headerHeight * STACK_CARD_Y_COMPENSATION_MULTIPLIER / 2f
+                    )
                 }
             }
     }
