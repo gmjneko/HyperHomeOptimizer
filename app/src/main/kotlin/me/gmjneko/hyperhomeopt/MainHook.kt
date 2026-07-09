@@ -21,6 +21,9 @@ class MainHook : XposedModule() {
         runCatching { stackTaskViewLayoutOffset(param.classLoader) }
             .onFailure { log(Log.ERROR, TAG, "Failed to hook stack task view layout config", it) }
 
+        runCatching { searchIndicatorBloomStrokeRemoval(param.classLoader) }
+            .onFailure { log(Log.ERROR, TAG, "Failed to hook search indicator bloom stroke", it) }
+
     }
 
     private fun taskViewHeaderOffset(classLoader: ClassLoader) {
@@ -113,11 +116,56 @@ class MainHook : XposedModule() {
             .intercept { TASK_STACK_CENTER_Y_IN_WINDOW_FRACTION }
     }
 
+    private fun searchIndicatorBloomStrokeRemoval(classLoader: ClassLoader) {
+        val blurUtilities = classLoader.loadClass(
+            "com.miui.home.common.utils.MiuixMaterialBlurUtilities"
+        )
+        val setSearchIndicatorBlurWithRadius = blurUtilities.getDeclaredMethod(
+            "setSearchIndicatorBlurWithRadius",
+            View::class.java,
+            Boolean::class.javaPrimitiveType,
+            Float::class.javaPrimitiveType,
+            Boolean::class.javaPrimitiveType,
+        )
+        val bloomStrokeUtils = classLoader.loadClass("miuix.core.util.HyperBloomStrokeUtils")
+        val clearBloomStroke = bloomStrokeUtils
+            .getDeclaredMethod("clearBloomStroke", View::class.java)
+            .apply { isAccessible = true }
+
+        hook(setSearchIndicatorBlurWithRadius)
+            .setId("search_indicator_bloom_stroke_removal")
+            .intercept { chain ->
+                chain.proceed().also {
+                    val view = chain.args[0] as? View ?: return@also
+                    val isEnabled = chain.args[1] as? Boolean ?: return@also
+                    if (!isEnabled || !isInsideCapsuleIndicator(view)) {
+                        return@also
+                    }
+
+                    runCatching { clearBloomStroke.invoke(null, view) }
+                        .onFailure {
+                            log(Log.ERROR, TAG, "Failed to clear search indicator bloom stroke", it)
+                        }
+                }
+            }
+    }
+
+    private fun isInsideCapsuleIndicator(view: View): Boolean {
+        var current: Any? = view
+        while (current != null) {
+            if (current.javaClass.name == CAPSULE_INDICATOR_CLASS) return true
+            current = (current as? View)?.parent
+        }
+        return false
+    }
+
     private companion object {
         private const val TAG = "miui-home"
         private const val MIUI_HOME_PACKAGE = "com.miui.home"
+        private const val CAPSULE_INDICATOR_CLASS =
+            "com.miui.home.launcher.pageindicators.CapsuleIndicator"
         private const val HORIZONTAL_OFFSET_DP = 45
-        private const val STACK_CARD_Y_COMPENSATION_MULTIPLIER = 1.6f
+        private const val STACK_CARD_Y_COMPENSATION_MULTIPLIER = 1.58f
         private const val TASK_STACK_CENTER_Y_IN_WINDOW_FRACTION = 0.49f
     }
 }
